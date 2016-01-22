@@ -23,12 +23,13 @@ class Paddles
         sf::Sprite enemySprite;
 
         /* entity data */
+        static const float playerSpeed;
         bool playerUp;
         bool playerDown;
 
         // main game functions
         void processEvents();
-        void update();
+        void update(sf::Time deltaTime);
         void render();
 
         // helper functions

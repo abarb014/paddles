@@ -1,5 +1,7 @@
 #include "paddles.hpp"
 
+const float Paddles::playerSpeed = 300.f;
+
 /* constructor for the Paddles object */
 Paddles::Paddles()
 : window(sf::VideoMode(640, 480), "Paddles")
@@ -21,10 +23,12 @@ Paddles::Paddles()
 /* runs the main game loop */
 void Paddles::run()
 {
+    sf::Clock clock;
     while (window.isOpen())
     {
+        sf::Time deltaTime = clock.restart();
         processEvents();
-        update();
+        update(deltaTime);
         render();
     }
 }
@@ -53,16 +57,16 @@ void Paddles::processEvents()
 }
 
 /* updates game logic */
-void Paddles::update()
+void Paddles::update(sf::Time deltaTime)
 {
     /* handle player movement */
     sf::Vector2f playerMov (0.f, 0.f);
     if (playerUp)
-        playerMov.y += 1.f;
+        playerMov.y -= playerSpeed;
     else if (playerDown)
-        playerMov.y -= 1.f;
+        playerMov.y += playerSpeed;
 
-    playerSprite.move(playerMov);
+    playerSprite.move(playerMov * deltaTime.asSeconds());
 }
 
 /* draws the images to the screen */
