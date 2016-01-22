@@ -1,5 +1,5 @@
-#ifndef PADDLES_H
-#define PADDLES_H
+#ifndef PADDLES_HPP
+#define PADDLES_HPP
 
 #include <iostream>
 #include <cstdlib>
@@ -38,29 +38,5 @@ class Paddles
         }
 };
 
-Paddles::Paddles()
-: window(sf::VideoMode(640, 480), "Paddles")
-, bgTexture()
-, bgSprite()
-, paddleTexture()
-, playerSprite()
-, enemySprite()
-{
-    loadTexture(bgSprite, bgTexture, "assets/images/paddlesBg.png");
-    loadTexture(playerSprite, paddleTexture, "assets/images/player.png");
-    loadTexture(enemySprite, paddleTexture, "addets/images/player.png");
-    playerSprite.setPosition(50, 190);
-    enemySprite.setPosition(590, 190);
-}
-
-void Paddles::run()
-{
-    while (window.isOpen())
-    {
-        processEvents();
-        update();
-        render();
-    }
-}
-
 #endif
+
