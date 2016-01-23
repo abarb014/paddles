@@ -1,6 +1,7 @@
 #include "paddles.hpp"
 
 const float Paddles::playerSpeed = 300.f;
+const sf::Time Paddles::TimePerFrame = sf::seconds(1.f/60.f);
 
 /* constructor for the Paddles object */
 Paddles::Paddles()
@@ -17,18 +18,27 @@ Paddles::Paddles()
     loadTexture(playerSprite, paddleTexture, "assets/images/player.png");
     loadTexture(enemySprite, paddleTexture, "assets/images/player.png");
     playerSprite.setPosition(50, 190);
-    enemySprite.setPosition(590, 190);
+    enemySprite.setPosition(583, 190);
 }
 
 /* runs the main game loop */
 void Paddles::run()
 {
     sf::Clock clock;
+    sf::Time timeSinceLastUpdate = sf::Time::Zero;
     while (window.isOpen())
     {
-        sf::Time deltaTime = clock.restart();
         processEvents();
-        update(deltaTime);
+        timeSinceLastUpdate += clock.restart();
+        
+        /* wait until a certain time has passed before rendering the next frame */
+        while (timeSinceLastUpdate > TimePerFrame)
+        {
+            timeSinceLastUpdate -= TimePerFrame;
+            processEvents();
+            update(TimePerFrame);
+        }
+
         render();
     }
 }
@@ -61,12 +71,23 @@ void Paddles::update(sf::Time deltaTime)
 {
     /* handle player movement */
     sf::Vector2f playerMov (0.f, 0.f);
-    if (playerUp)
+    // Debug
+    std::cerr << "Player Sprite: (" << playerSprite.getPosition().x << ", " << playerSprite.getPosition().y << ")" << std::endl;
+
+    sf::Vector2f location = playerSprite.getPosition();
+    if (playerUp && location.y > 0.f)
         playerMov.y -= playerSpeed;
-    else if (playerDown)
+    else if (playerDown && location.y < 380.f)
         playerMov.y += playerSpeed;
 
     playerSprite.move(playerMov * deltaTime.asSeconds());
+
+    /* correct any overshoots in player position */
+    location = playerSprite.getPosition();
+    if (location.y < 0.f)
+        playerSprite.setPosition(location.x, 0.f);
+    else if (location.y > 380.f)
+        playerSprite.setPosition(location.x, 380.f);
 }
 
 /* draws the images to the screen */

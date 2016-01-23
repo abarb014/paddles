@@ -24,6 +24,7 @@ class Paddles
 
         /* entity data */
         static const float playerSpeed;
+        static const sf::Time TimePerFrame;
         bool playerUp;
         bool playerDown;
 
