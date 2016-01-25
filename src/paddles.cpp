@@ -100,7 +100,33 @@ void Paddles::update(sf::Time deltaTime)
 
 
     /* move the ball according to its direction */
+    sf::Vector2f ballLocation = ballSprite.getPosition();
+
+    if (ballLocation.y == 0.f || ballLocation.y == 470.f)
+        ballDirection.y *= -1.f;
+    else if (ballLocation.x == 0.f || ballLocation.x == 630.f)
+        ballDirection.x *= -1.f;
+
     ballSprite.move(ballDirection * deltaTime.asSeconds());
+
+    if (ballLocation.y < 0.f || ballLocation.y > 470.f)
+    {
+        if (ballLocation.y < 0.f)
+            ballSprite.setPosition(ballLocation.x, 0);
+        else
+            ballSprite.setPosition(ballLocation.x, 470);
+    }
+    else if (ballLocation.x < 0.f || ballLocation.x > 630.f)
+    {
+        if (ballLocation.x < 0.f)
+            ballSprite.setPosition(0.f, ballLocation.y);
+        else
+            ballSprite.setPosition(630.f, ballLocation.y);
+    }
+    else if (playerSprite.getGlobalBounds().intersects(ballSprite.getGlobalBounds()))
+    {
+        ballDirection.x *= -1.f;
+    }
 }
 
 /* draws the images to the screen */
@@ -109,7 +135,7 @@ void Paddles::render()
     window.clear();
     window.draw(bgSprite);
     window.draw(playerSprite);
-    window.draw(enemySprite);
+    // window.draw(enemySprite);
     window.draw(ballSprite);
     window.display();
 }
