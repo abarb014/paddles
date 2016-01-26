@@ -2,6 +2,7 @@
 
 const float Paddles::playerSpeed = 300.f;
 const float Paddles::ballSpeed = 350.f;
+const float Paddles::enemySpeed = 300.f;
 const sf::Time Paddles::TimePerFrame = sf::seconds(1.f/60.f);
 
 /* constructor for the Paddles object */
@@ -100,33 +101,11 @@ void Paddles::update(sf::Time deltaTime)
 
 
     /* move the ball according to its direction */
-    sf::Vector2f ballLocation = ballSprite.getPosition();
+    bounceBall(deltaTime);
 
-    if (ballLocation.y == 0.f || ballLocation.y == 470.f)
-        ballDirection.y *= -1.f;
-    else if (ballLocation.x == 0.f || ballLocation.x == 630.f)
-        ballDirection.x *= -1.f;
+    /* the enemy moves! */
+    enemyAI(deltaTime);
 
-    ballSprite.move(ballDirection * deltaTime.asSeconds());
-
-    if (ballLocation.y < 0.f || ballLocation.y > 470.f)
-    {
-        if (ballLocation.y < 0.f)
-            ballSprite.setPosition(ballLocation.x, 0);
-        else
-            ballSprite.setPosition(ballLocation.x, 470);
-    }
-    else if (ballLocation.x < 0.f || ballLocation.x > 630.f)
-    {
-        if (ballLocation.x < 0.f)
-            ballSprite.setPosition(0.f, ballLocation.y);
-        else
-            ballSprite.setPosition(630.f, ballLocation.y);
-    }
-    else if (playerSprite.getGlobalBounds().intersects(ballSprite.getGlobalBounds()))
-    {
-        ballDirection.x *= -1.f;
-    }
 }
 
 /* draws the images to the screen */
@@ -135,7 +114,7 @@ void Paddles::render()
     window.clear();
     window.draw(bgSprite);
     window.draw(playerSprite);
-    // window.draw(enemySprite);
+    window.draw(enemySprite);
     window.draw(ballSprite);
     window.display();
 }
@@ -163,4 +142,61 @@ void Paddles::handlePlayerInput(sf::Keyboard::Key key, bool isPressed)
 float Paddles::toRadians(float angle)
 {
     return angle * (M_PI/180.f);
+}
+
+/* collision detection for the ball sprite */
+void Paddles::bounceBall(sf::Time deltaTime)
+{
+    sf::Vector2f ballLocation = ballSprite.getPosition();
+
+    /* check if the ball has collided with the screen */
+    if (ballLocation.y == 0.f || ballLocation.y == 470.f)
+        ballDirection.y *= -1.f;
+    else if (ballLocation.x == 0.f || ballLocation.x == 630.f)
+        ballDirection.x *= -1.f;
+
+    /* move the ball */
+    ballSprite.move(ballDirection * deltaTime.asSeconds());
+    bool entityCollision = playerSprite.getGlobalBounds().intersects(ballSprite.getGlobalBounds())
+                            || enemySprite.getGlobalBounds().intersects(ballSprite.getGlobalBounds());
+
+    /* correct the ball's position if it moved too far */
+    if (ballLocation.y < 0.f || ballLocation.y > 470.f)
+    {
+        if (ballLocation.y < 0.f)
+            ballSprite.setPosition(ballLocation.x, 0);
+        else
+            ballSprite.setPosition(ballLocation.x, 470);
+    }
+    else if (ballLocation.x < 0.f || ballLocation.x > 630.f)
+    {
+        if (ballLocation.x < 0.f)
+            ballSprite.setPosition(0.f, ballLocation.y);
+        else
+            ballSprite.setPosition(630.f, ballLocation.y);
+    }
+    else if (entityCollision)
+    {
+        ballDirection.x *= -1.f;
+    }
+
+    return;
+}
+
+/* Determines where the enemy will move*/
+void Paddles::enemyAI(sf::Time deltaTime)
+{
+    /* dumb as a sack of hammers right now */
+    sf::Vector2f ballLocation = ballSprite.getPosition();
+    sf::Vector2f enemyLocation = enemySprite.getPosition();
+    sf::Vector2f enemyMov (0.f, 0.f);
+
+    if (ballLocation.y > (enemyLocation.y + 50)) 
+        enemyMov.y += enemySpeed;
+    else if (ballLocation.y < (enemyLocation.y + 50))
+        enemyMov.y -= enemySpeed;
+
+    enemySprite.move(enemyMov * deltaTime.asSeconds());
+
+    return;
 }

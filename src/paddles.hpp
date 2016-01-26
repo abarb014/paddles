@@ -33,6 +33,7 @@ class Paddles
         bool playerDown;
 
         sf::Vector2f ballDirection;
+        static const float enemySpeed;
         float ballAngle;
         static const float ballSpeed;
 
@@ -47,6 +48,8 @@ class Paddles
         void loadTexture(sf::Sprite &sprite, sf::Texture &texture, const std::string &filename);
         void handlePlayerInput(sf::Keyboard::Key key, bool isPressed);
         float toRadians(float angle);
+        void bounceBall(sf::Time deltaTime);
+        void enemyAI(sf::Time deltaTime);
 };
 
 #endif
