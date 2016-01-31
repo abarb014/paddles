@@ -15,29 +15,35 @@ class Paddles
     private:
         /* main game window */
         sf::RenderWindow window;
+        static const sf::Time TimePerFrame;
+        static const float xRange;
+        static const float yRange;
 
-        /* graphical variables */
+        /* background */
         sf::Texture bgTexture;
         sf::Sprite bgSprite;
 
+        /* paddle */
         sf::Texture paddleTexture;
         sf::Sprite playerSprite;
         sf::Sprite enemySprite;
-
-        sf::Texture ballTexture;
-        sf::Sprite ballSprite;
-
-        /* entity data */
         static const float playerSpeed;
+        static const float enemySpeed;
         bool playerUp;
         bool playerDown;
 
+        /* ball */
+        sf::Texture ballTexture;
+        sf::Sprite ballSprite;
         sf::Vector2f ballDirection;
-        static const float enemySpeed;
-        float ballAngle;
         static const float ballSpeed;
+        void moveBall(sf::Time deltaTime);
+        void checkCollisions();
+        void bounceBall(const sf::Sprite &sprite);
+        static const float ballMaxAngle;
 
-        static const sf::Time TimePerFrame;
+        /* ai */
+        void enemyAI(sf::Time deltaTime);
 
         // main game functions
         void processEvents();
@@ -48,8 +54,6 @@ class Paddles
         void loadTexture(sf::Sprite &sprite, sf::Texture &texture, const std::string &filename);
         void handlePlayerInput(sf::Keyboard::Key key, bool isPressed);
         float toRadians(float angle);
-        void bounceBall(sf::Time deltaTime);
-        void enemyAI(sf::Time deltaTime);
 };
 
 #endif

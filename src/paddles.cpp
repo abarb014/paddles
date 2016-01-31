@@ -1,13 +1,27 @@
 #include "paddles.hpp"
 
+/*************
+ * constants *
+ *************/
+
+const float Paddles::xRange = 640.f;
+const float Paddles::yRange = 480.f;
+
 const float Paddles::playerSpeed = 300.f;
-const float Paddles::ballSpeed = 350.f;
+const float Paddles::ballSpeed = 300.f;
 const float Paddles::enemySpeed = 300.f;
+
+const float Paddles::ballMaxAngle = 75.f;
+
 const sf::Time Paddles::TimePerFrame = sf::seconds(1.f/60.f);
 
-/* constructor for the Paddles object */
+/****************
+ * constructors *
+ ****************/
+
+/* basic constructor for the Paddles object */
 Paddles::Paddles()
-: window(sf::VideoMode(640, 480), "Paddles")
+: window(sf::VideoMode(xRange, yRange), "Paddles")
 , bgTexture()
 , bgSprite()
 , paddleTexture()
@@ -17,20 +31,26 @@ Paddles::Paddles()
 , playerDown(false)
 , ballTexture()
 , ballSprite()
-, ballAngle(30)
 , ballDirection()
 {
     loadTexture(bgSprite, bgTexture, "assets/images/paddlesBg.png");
     loadTexture(playerSprite, paddleTexture, "assets/images/player.png");
     loadTexture(enemySprite, paddleTexture, "assets/images/player.png");
     loadTexture(ballSprite, ballTexture, "assets/images/ball.png");
-    playerSprite.setPosition(50, 190);
-    enemySprite.setPosition(583, 190);
-    ballSprite.setPosition(160, 245);
-    
-    ballDirection.x = cos(toRadians(ballAngle)) * ballSpeed;
-    ballDirection.y = -1.f * sin(toRadians(ballAngle)) * ballSpeed;
+
+    /* place sprites */
+    playerSprite.setPosition(50, 190); // Make these more general...
+    enemySprite.setPosition(583, 190); //
+    ballSprite.setPosition((xRange/2.f) - (ballTexture.getSize().x/2.f), yRange/2.f);
+
+    /* set ball direction */
+    ballDirection.x = 1; //cos(toRadians(30.f));
+    ballDirection.y = -1.f * sin(toRadians(30.f));
 }
+
+/***********************
+ * main game functions *
+ ***********************/
 
 /* runs the main game loop */
 void Paddles::run()
@@ -44,8 +64,7 @@ void Paddles::run()
         
         /* wait until a certain time has passed before rendering the next frame */
         while (timeSinceLastUpdate > TimePerFrame)
-        {
-            timeSinceLastUpdate -= TimePerFrame;
+        { timeSinceLastUpdate -= TimePerFrame;
             processEvents();
             update(TimePerFrame);
         }
@@ -80,10 +99,12 @@ void Paddles::processEvents()
 /* updates game logic */
 void Paddles::update(sf::Time deltaTime)
 {
+    /* rewrite this MESS */
+
+    /************************************************************/
     /* handle player movement */
     sf::Vector2f playerMov (0.f, 0.f);
-    // Debug
-    // std::cerr << "Player Sprite: (" << playerSprite.getPosition().x << ", " << playerSprite.getPosition().y << ")" << std::endl;
+
     sf::Vector2f location = playerSprite.getPosition();
     if (playerUp && location.y > 0.f)
         playerMov.y -= playerSpeed;
@@ -98,14 +119,14 @@ void Paddles::update(sf::Time deltaTime)
         playerSprite.setPosition(location.x, 0.f);
     else if (location.y > 380.f)
         playerSprite.setPosition(location.x, 380.f);
-
-
-    /* move the ball according to its direction */
-    bounceBall(deltaTime);
-
-    /* the enemy moves! */
+    /*************************************************************/
+    
+    /* enemy logic */
     enemyAI(deltaTime);
 
+    /* ball logic */
+    moveBall(deltaTime);
+    checkCollisions();
 }
 
 /* draws the images to the screen */
@@ -118,6 +139,99 @@ void Paddles::render()
     window.draw(ballSprite);
     window.display();
 }
+/******************
+ * ball functions *
+ ******************/
+
+/* moves the ball */
+void Paddles::moveBall(sf::Time deltaTime)
+{
+    sf::Vector2f ballMov = ballSpeed * ballDirection;
+    ballSprite.move(ballMov * deltaTime.asSeconds());
+    
+    sf::Vector2f ballPosition = ballSprite.getPosition();
+
+    /* correct the ball location */
+    if (ballPosition.y < 0.f) 
+        ballSprite.setPosition(ballPosition.x, 0.f);
+    else if (ballPosition.y > yRange - 10.f) 
+        ballSprite.setPosition(ballPosition.x, yRange - 10.f);
+    else if (ballPosition.x < 0.f)
+        ballSprite.setPosition(0.f, ballPosition.y);
+    else if (ballPosition.x > xRange - 10.f)
+        ballSprite.setPosition(xRange - 10.f, ballPosition.y);
+
+    return;
+}
+
+void Paddles::checkCollisions()
+{
+    /* make sure that the ball stays within the acceptable range */
+    sf::Vector2f ballPosition = ballSprite.getPosition();
+
+    /* screen collision */
+    if (ballPosition.y == 0.f || ballPosition.y == yRange - 10.f)
+        ballDirection.y *= -1.f;
+    else if (ballPosition.x == 0.f || ballPosition.x == xRange - 10.f)
+        ballDirection.x *= -1.f;
+    else if (playerSprite.getGlobalBounds().intersects(ballSprite.getGlobalBounds())) 
+    {
+        ballSprite.setPosition(playerSprite.getPosition().x + 7.f, ballPosition.y);
+        bounceBall(playerSprite);
+    }
+    else if (enemySprite.getGlobalBounds().intersects(ballSprite.getGlobalBounds()))
+    {
+        ballSprite.setPosition(enemySprite.getPosition().x - 10.f, ballPosition.y);
+        bounceBall(enemySprite);
+    }
+
+    return;
+}
+
+void Paddles::bounceBall(const sf::Sprite &sprite)
+{
+    float tempAngle = ((ballSprite.getPosition().y - sprite.getPosition().y) - (100.f / 2.f)) / (100.f / 2.f);
+    tempAngle *= ballMaxAngle;
+
+    ballDirection.y = toRadians(tempAngle);
+    ballDirection.x *= -1;
+
+    return;
+}
+
+/*******************
+ * enemy functions *
+ *******************/
+
+/* moves the enemy based on the location of the ball */
+void Paddles::enemyAI(sf::Time deltaTime)
+{
+    /* currently dumb as a sack of hammers */
+    sf::Vector2f ballPosition = ballSprite.getPosition();
+    sf::Vector2f enemyPosition = enemySprite.getPosition();
+
+    /* move the enemy based on enemy location */
+    sf::Vector2f enemyMov (0.f, 0.f);
+    if (ballPosition.y > enemyPosition.y + 50.f)
+        enemyMov.y += enemySpeed;
+    else if (ballPosition.y < enemyPosition.y + 50.f)
+        enemyMov.y -= enemySpeed;
+
+    enemySprite.move(enemyMov * deltaTime.asSeconds());
+
+    /* correct the enemy position */
+    enemyPosition = enemySprite.getPosition();
+    if (enemyPosition.y < 0.f)
+        enemySprite.setPosition(enemyPosition.x, 0.f);
+    else if (enemyPosition.y > 380.f)
+        enemySprite.setPosition(enemyPosition.x, 380.f);
+
+    return;
+}
+
+/*************************
+ * misc helper functions *
+ *************************/
 
 void Paddles::loadTexture(sf::Sprite &sprite, sf::Texture &texture, const std::string &filename)
 {
@@ -144,59 +258,3 @@ float Paddles::toRadians(float angle)
     return angle * (M_PI/180.f);
 }
 
-/* collision detection for the ball sprite */
-void Paddles::bounceBall(sf::Time deltaTime)
-{
-    sf::Vector2f ballLocation = ballSprite.getPosition();
-
-    /* check if the ball has collided with the screen */
-    if (ballLocation.y == 0.f || ballLocation.y == 470.f)
-        ballDirection.y *= -1.f;
-    else if (ballLocation.x == 0.f || ballLocation.x == 630.f)
-        ballDirection.x *= -1.f;
-
-    /* move the ball */
-    ballSprite.move(ballDirection * deltaTime.asSeconds());
-    bool entityCollision = playerSprite.getGlobalBounds().intersects(ballSprite.getGlobalBounds())
-                            || enemySprite.getGlobalBounds().intersects(ballSprite.getGlobalBounds());
-
-    /* correct the ball's position if it moved too far */
-    if (ballLocation.y < 0.f || ballLocation.y > 470.f)
-    {
-        if (ballLocation.y < 0.f)
-            ballSprite.setPosition(ballLocation.x, 0);
-        else
-            ballSprite.setPosition(ballLocation.x, 470);
-    }
-    else if (ballLocation.x < 0.f || ballLocation.x > 630.f)
-    {
-        if (ballLocation.x < 0.f)
-            ballSprite.setPosition(0.f, ballLocation.y);
-        else
-            ballSprite.setPosition(630.f, ballLocation.y);
-    }
-    else if (entityCollision)
-    {
-        ballDirection.x *= -1.f;
-    }
-
-    return;
-}
-
-/* Determines where the enemy will move*/
-void Paddles::enemyAI(sf::Time deltaTime)
-{
-    /* dumb as a sack of hammers right now */
-    sf::Vector2f ballLocation = ballSprite.getPosition();
-    sf::Vector2f enemyLocation = enemySprite.getPosition();
-    sf::Vector2f enemyMov (0.f, 0.f);
-
-    if (ballLocation.y > (enemyLocation.y + 50)) 
-        enemyMov.y += enemySpeed;
-    else if (ballLocation.y < (enemyLocation.y + 50))
-        enemyMov.y -= enemySpeed;
-
-    enemySprite.move(enemyMov * deltaTime.asSeconds());
-
-    return;
-}
