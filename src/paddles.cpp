@@ -33,6 +33,9 @@ Paddles::Paddles()
 , ballSprite()
 , ballDirection()
 {
+    /* disable v-sync */
+    window.setVerticalSyncEnabled(false);
+
     loadTexture(bgSprite, bgTexture, "assets/images/paddlesBg.png");
     loadTexture(playerSprite, paddleTexture, "assets/images/player.png");
     loadTexture(enemySprite, paddleTexture, "assets/images/player.png");
@@ -212,10 +215,10 @@ void Paddles::enemyAI(sf::Time deltaTime)
 
     /* move the enemy based on enemy location */
     sf::Vector2f enemyMov (0.f, 0.f);
-    if (ballPosition.y > enemyPosition.y + 50.f)
-        enemyMov.y += enemySpeed;
-    else if (ballPosition.y < enemyPosition.y + 50.f)
+    if (ballPosition.y < enemyPosition.y)
         enemyMov.y -= enemySpeed;
+    else if (ballPosition.y > enemyPosition.y + 100.f)
+        enemyMov.y += enemySpeed;
 
     enemySprite.move(enemyMov * deltaTime.asSeconds());
 
