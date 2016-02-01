@@ -22,6 +22,9 @@ const sf::Time Paddles::TimePerFrame = sf::seconds(1.f/60.f);
 /* basic constructor for the Paddles object */
 Paddles::Paddles()
 : window(sf::VideoMode(xRange, yRange), "Paddles")
+, font()
+, playerScore()
+, enemyScore()
 , bgTexture()
 , bgSprite()
 , paddleTexture()
@@ -32,10 +35,20 @@ Paddles::Paddles()
 , ballTexture()
 , ballSprite()
 , ballDirection()
+, scored(0)
 {
     /* disable v-sync */
     window.setVerticalSyncEnabled(false);
 
+    /* load font -- FIX me please */
+    if (!font.loadFromFile("assets/fonts/rainyhearts.ttf"))
+    {
+        std::cerr << "[Error] font file not found: assets/fonts/rainyhearts.ttf" << std::endl;
+        exit(-1);
+    }
+    initScoreboard();
+
+    /* load textures onto sprites */
     loadTexture(bgSprite, bgTexture, "assets/images/paddlesBg.png");
     loadTexture(playerSprite, paddleTexture, "assets/images/player.png");
     loadTexture(enemySprite, paddleTexture, "assets/images/player.png");
@@ -103,33 +116,37 @@ void Paddles::processEvents()
 void Paddles::update(sf::Time deltaTime)
 {
     /* rewrite this MESS */
+    if (scored == 0)
+    {
+        /************************************************************/
+        /* handle player movement */
+        sf::Vector2f playerMov (0.f, 0.f);
 
-    /************************************************************/
-    /* handle player movement */
-    sf::Vector2f playerMov (0.f, 0.f);
+        sf::Vector2f location = playerSprite.getPosition();
+        if (playerUp && location.y > 0.f)
+            playerMov.y -= playerSpeed;
+        else if (playerDown && location.y < 380.f)
+            playerMov.y += playerSpeed;
 
-    sf::Vector2f location = playerSprite.getPosition();
-    if (playerUp && location.y > 0.f)
-        playerMov.y -= playerSpeed;
-    else if (playerDown && location.y < 380.f)
-        playerMov.y += playerSpeed;
+        playerSprite.move(playerMov * deltaTime.asSeconds());
 
-    playerSprite.move(playerMov * deltaTime.asSeconds());
+        /* correct any overshoots in player position */
+        location = playerSprite.getPosition();
+        if (location.y < 0.f)
+            playerSprite.setPosition(location.x, 0.f);
+        else if (location.y > 380.f)
+            playerSprite.setPosition(location.x, 380.f);
+        /*************************************************************/
+        
+        /* enemy logic */
+        enemyAI(deltaTime);
 
-    /* correct any overshoots in player position */
-    location = playerSprite.getPosition();
-    if (location.y < 0.f)
-        playerSprite.setPosition(location.x, 0.f);
-    else if (location.y > 380.f)
-        playerSprite.setPosition(location.x, 380.f);
-    /*************************************************************/
-    
-    /* enemy logic */
-    enemyAI(deltaTime);
-
-    /* ball logic */
-    moveBall(deltaTime);
-    checkCollisions();
+        /* ball logic */
+        moveBall(deltaTime);
+        checkCollisions();
+    }
+    else
+        ballScored(scored);
 }
 
 /* draws the images to the screen */
@@ -137,9 +154,12 @@ void Paddles::render()
 {
     window.clear();
     window.draw(bgSprite);
+    if (scored == 0)
+        window.draw(ballSprite);
     window.draw(playerSprite);
     window.draw(enemySprite);
-    window.draw(ballSprite);
+    window.draw(playerScore);
+    window.draw(enemyScore);
     window.display();
 }
 /******************
@@ -175,8 +195,12 @@ void Paddles::checkCollisions()
     /* screen collision */
     if (ballPosition.y == 0.f || ballPosition.y == yRange - 10.f)
         ballDirection.y *= -1.f;
-    else if (ballPosition.x == 0.f || ballPosition.x == xRange - 10.f)
-        ballDirection.x *= -1.f;
+    else if (ballPosition.x <= 0.f)
+        scored = 2;
+    else if (ballPosition.x >= xRange - 10.f)
+        scored = 1;
+    /*else if (ballPosition.x == 0.f || ballPosition.x == xRange - 10.f)
+        ballDirection.x *= -1.f;*/
     else if (playerSprite.getGlobalBounds().intersects(ballSprite.getGlobalBounds())) 
     {
         ballSprite.setPosition(playerSprite.getPosition().x + 7.f, ballPosition.y);
@@ -261,3 +285,54 @@ float Paddles::toRadians(float angle)
     return angle * (M_PI/180.f);
 }
 
+void Paddles::initScoreboard()
+{
+    playerScore.setFont(font);
+    enemyScore.setFont(font);
+
+    playerScore.setString("0");
+    enemyScore.setString("0");
+
+    playerScore.setCharacterSize(60);
+    enemyScore.setCharacterSize(60);
+
+    playerScore.setPosition(160.f, 50.f);
+    enemyScore.setPosition(480.f, 50.f);
+
+    return;
+}
+
+void Paddles::ballScored(const unsigned int &player)
+{
+    int currentScore = 0;
+
+    /* update the correct score */
+    if (player == 1)
+    {
+        std::stringstream str(playerScore.getString());
+        str >> currentScore;
+        currentScore += 1;
+        std::stringstream convert;
+        convert << currentScore;
+        playerScore.setString(convert.str());
+    }
+    else if (player == 2)
+    {
+        std::stringstream str(enemyScore.getString());
+        str >> currentScore;
+        currentScore += 1;
+        std::stringstream convert;
+        convert << currentScore;
+        enemyScore.setString(convert.str());
+    }
+
+    /* reset the ball -- FIX me please */
+    ballSprite.setPosition((xRange/2.f) - (ballTexture.getSize().x/2.f), yRange/2.f);
+    ballDirection.x = 1; //cos(toRadians(30.f));
+    ballDirection.y = -1.f * sin(toRadians(30.f));
+
+    /* reset the scored flag */
+    scored = 0;
+
+    return;
+}

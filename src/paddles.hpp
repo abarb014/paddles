@@ -2,6 +2,7 @@
 #define PADDLES_HPP
 
 #include <iostream>
+#include <sstream>
 #include <cstdlib>
 #include <cmath>
 #include <SFML/Graphics.hpp>
@@ -18,6 +19,11 @@ class Paddles
         static const sf::Time TimePerFrame;
         static const float xRange;
         static const float yRange;
+        sf::Font font;
+        sf::Text playerScore;
+        sf::Text enemyScore;
+        unsigned int scored;
+        void ballScored(const unsigned int &player);
 
         /* background */
         sf::Texture bgTexture;
@@ -54,6 +60,7 @@ class Paddles
         void loadTexture(sf::Sprite &sprite, sf::Texture &texture, const std::string &filename);
         void handlePlayerInput(sf::Keyboard::Key key, bool isPressed);
         float toRadians(float angle);
+        void initScoreboard();
 };
 
 #endif
