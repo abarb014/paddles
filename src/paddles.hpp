@@ -5,6 +5,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <cmath>
+#include <ctime>
 #include <SFML/Graphics.hpp>
 
 class Paddles
@@ -61,6 +62,8 @@ class Paddles
         void handlePlayerInput(sf::Keyboard::Key key, bool isPressed);
         float toRadians(float angle);
         void initScoreboard();
+        float serveAngle(void);
+        float pickSide(void);
 };
 
 #endif

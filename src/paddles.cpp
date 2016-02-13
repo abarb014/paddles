@@ -60,8 +60,8 @@ Paddles::Paddles()
     ballSprite.setPosition((xRange/2.f) - (ballTexture.getSize().x/2.f), yRange/2.f);
 
     /* set ball direction */
-    ballDirection.x = 1; //cos(toRadians(30.f));
-    ballDirection.y = -1.f * sin(toRadians(30.f));
+    ballDirection.x = pickSide();
+    ballDirection.y = -1.f * sin(toRadians(serveAngle()));
 }
 
 /***********************
@@ -315,6 +315,7 @@ void Paddles::ballScored(const unsigned int &player)
         std::stringstream convert;
         convert << currentScore;
         playerScore.setString(convert.str());
+        ballDirection.x = 1;
     }
     else if (player == 2)
     {
@@ -324,15 +325,31 @@ void Paddles::ballScored(const unsigned int &player)
         std::stringstream convert;
         convert << currentScore;
         enemyScore.setString(convert.str());
+        ballDirection.x = -1;
     }
 
     /* reset the ball -- FIX me please */
     ballSprite.setPosition((xRange/2.f) - (ballTexture.getSize().x/2.f), yRange/2.f);
-    ballDirection.x = 1; //cos(toRadians(30.f));
-    ballDirection.y = -1.f * sin(toRadians(30.f));
+    ballDirection.y = -1.f * sin(toRadians(serveAngle()));
 
     /* reset the scored flag */
     scored = 0;
 
     return;
+}
+
+float Paddles::serveAngle(void)
+{
+    /* (rand() % max + 1 - min) + min */
+    float angle = (rand() % (45 + 1 + 45)) - 45;
+    return angle;
+}
+
+float Paddles::pickSide(void)
+{
+    float side = rand() % 2;
+    if (side == 0)
+        return -1.f;
+    else
+        return 1.f;
 }
