@@ -5,7 +5,7 @@ CPPFLAGS=-lsfml-graphics -lsfml-window -lsfml-system
 all: paddles
 
 paddles: main.o paddles.o
-	g++ src/main.o src/paddles.o -o bin/Paddles $(CPPFLAGS)
+	g++ src/main.o src/paddles.o -o Paddles $(CPPFLAGS)
 
 main.o: src/main.cpp
 	gcc -c  src/main.cpp -o src/main.o
